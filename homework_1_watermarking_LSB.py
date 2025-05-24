@@ -1,25 +1,33 @@
 import cv2
 import numpy as np
+import random
+import string
+
+
 
 class WaterMarking:
     def __init__(self, marking:str, image_path_name:str='platform_validation.png' ):
         self.marking = marking
+        self.size_watermarking_characters = len(marking)
         self.image_path_name = image_path_name
         self.image_gray_data = None
 
-    def open_show_image_grayscale(self):
+    def open_show_image_grayscale(self, image_path:str = None):
         """
         Open an image according to the image_name, and only shows it in grayscale
         after that it save the image in this scale
         """
-        image_opened = cv2.imread(self.image_path_name)
-        image_opened_gray = cv2.cvtColor(image_opened, cv2.COLOR_BGR2GRAY)
-        cv2.imshow(self.image_path_name, image_opened_gray)
-        cv2.imwrite(str("grayscale_") + self.image_path_name, image_opened_gray)
-        cv2.imshow(str("grayscale_") + self.image_path_name, image_opened_gray)
-        self.image_gray_data = image_opened_gray
+        if image_path is None:
+            image_path = self.image_path_name
 
-    def adding_marking(self, data_layer:np.ndarray):
+        image_opened = cv2.imread(image_path)
+        image_opened_gray = cv2.cvtColor(image_opened, cv2.COLOR_BGR2GRAY)
+        cv2.imshow(image_path, image_opened_gray)
+        cv2.imwrite(str("grayscale_") + image_path, image_opened_gray)
+        cv2.imshow(str("grayscale_") + image_path, image_opened_gray)
+        return image_opened_gray
+
+    def adding_marking_grayscale(self, data_layer:np.ndarray):
         row, col = data_layer.shape
         print(f"The maximum characters size of the marking is: { (row * col) // 8}")
         bin_vector = self.create_marking_bin_vector()
@@ -36,8 +44,34 @@ class WaterMarking:
         print("The data was added")
         return data_layer
 
+    def recover_marking_grayscale(self, path_image_watermarking_grayscale:str):
+        """
+        Recover the data from the image
+        :param path_image_watermarking_grayscale:
+        :return:
+        """
 
+        watermarking_grayscale = self.open_show_image_grayscale(path_image_watermarking_grayscale)
+        bin_vector = []
+        index_bin_vector = 0
+        len_bin_vector = self.size_watermarking_characters * 8
+        print(f"the len of bin vector is {len_bin_vector}")
+        row, col = watermarking_grayscale.shape
+        while index_bin_vector < len_bin_vector:
+            for r in range(row):
+                for c in range(col):
+                    if index_bin_vector >= len_bin_vector:
+                        break
+                    bin_vector.append((int(watermarking_grayscale[r][c]) & 1)) # (element & 0000 0001)
+                    index_bin_vector += 1
+                    #print("The index of the bin vector is: ", index_bin_vector)
+        print ("the bin vector recovered is: ", bin_vector)
 
+        # Split into chunks of 8 bits
+        chunks = [bin_vector[i:i + 8] for i in range(0, len(bin_vector), 8)]
+        # Convert each chunk to a character
+        marking_recovered = ''.join([chr(int(''.join(map(str, byte)), 2)) for byte in chunks])
+        print(marking_recovered)
 
     def create_marking_bin_vector(self):
         bin_vector = []
@@ -66,23 +100,19 @@ class WaterMarking:
         print("Finish all the OpenCV sessions")
 
 if __name__ == "__main__":
-    water_marking = WaterMarking(marking = "Hi I'm a WaterMarking ", image_path_name = "platform_validation.png")
-    water_marking.open_show_image_grayscale()
+    # Define the characters to choose from (printable characters)
+    chars = string.ascii_letters + string.digits + string.punctuation + ' '
+    # Generate a random string of exactly 6427 characters
+    random_text = ''.join(random.choices(chars, k=6427))
+    marking_text = random_text
+    print("The marking is: ", marking_text)
+    water_marking = WaterMarking(marking = marking_text, image_path_name = "platform_validation.png")
+
     # End the OpenCV session
-    data_grey = water_marking.image_gray_data
-    print(data_grey.shape)
-    print(data_grey[0][1])
-
-    print(data_grey.dtype)
-    new_element = int(data_grey[0][1])
-    bit = 0
-    new = (new_element & ~1) | bit # (new_element & 1111 1110) | bit
-    letter = "a"
-    print(f"the letter is:{letter} and int {ord(letter)}, the ")
-    print(new)
-
-    #water_marking.save_and_show_image(marking, data_grey)
-    water_marking.adding_marking(data_grey)
+    data_grey = water_marking.open_show_image_grayscale()
+    data_gray_marking_added = water_marking.adding_marking_grayscale(data_grey)
+    water_marking.save_and_show_image("platform_validation_water_marking.png", data_gray_marking_added)
+    water_marking.recover_marking_grayscale("platform_validation_water_marking.png")
     water_marking.finish_opencv_session()
 
     print(data_grey)

@@ -162,7 +162,10 @@ class StegoDTC:
         B[self.u2, self.v2] = c2
 
         # Convert block back to spatial domain
-        return np.round(idct2(B)).clip(0, 255).astype(np.uint8)
+        block_reconstructed = idct2(B)
+        block_reconstructed = np.clip(np.round(block_reconstructed), 0, 255)
+        return block_reconstructed.astype(np.uint8)
+        #return np.round(idct2(B)).clip(0, 255).astype(np.uint8)
 
     def create_marking_text2bin_vector(self, message=None):
         """
@@ -211,6 +214,7 @@ class StegoDTC:
         """
         B = dct2(block.astype(float))
         return 1 if B[self.u1, self.v1] > B[self.u2, self.v2] else 0
+
 
     def recover_text_watermarking(self, message_len, path_name:str):
         """
@@ -284,6 +288,7 @@ class StegoDTC:
 
         h, w, _ = stego_img.shape
         b_channel, g_channel, r_channel = cv2.split(stego_img)  # <-- FIX: use stego_img not self.img
+
         channels = [b_channel, g_channel, r_channel]
         messages_len = [message_1_len, message_2_len, message_3_len]
         channel_names = ["Blue", "Green", "Red"]

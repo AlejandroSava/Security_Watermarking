@@ -11,11 +11,61 @@ def dct2(block):
 def idct2(block):
     return idct(idct(block.T, norm='ortho').T, norm='ortho')
 
+def calculate_psnr(original, modified):
+    mse = np.mean((original.astype(np.float64) - modified.astype(np.float64)) ** 2)
+    if mse == 0:
+        return float('inf')  # they are the same
+    max_pixel = 255.0
+    psnr = 10 * np.log10((max_pixel ** 2) / mse)
+    return psnr
+
+# Enhanced PSNR measurement method
+def psnr_measurement(original_path, modified_path, grayscale=True):
+    if grayscale:
+        # Load grayscale images
+        original = cv2.imread(original_path, cv2.IMREAD_GRAYSCALE)
+        modified = cv2.imread(modified_path, cv2.IMREAD_GRAYSCALE)
+
+        if original is None or modified is None:
+            print("Error: Could not load one or both images.")
+            return
+
+        if original.shape != modified.shape:
+            print("Error: Images must be the same size and type.")
+            return
+
+        psnr_value = calculate_psnr(original, modified)
+        print(f"[Grayscale] PSNR: {psnr_value:.2f} dB")
+
+    else:
+        # Load color images
+        original = cv2.imread(original_path)
+        modified = cv2.imread(modified_path)
+
+        if original is None or modified is None:
+            print("Error: Could not load one or both images.")
+            return
+
+        if original.shape != modified.shape:
+            print("Error: Images must be the same size and type.")
+            return
+
+        # Split channels
+        channels_original = cv2.split(original)
+        channels_modified = cv2.split(modified)
+        channel_names = ['Blue', 'Green', 'Red']
+
+        # Calculate and display PSNR for each channel
+        for i in range(3):
+            psnr_val = calculate_psnr(channels_original[i], channels_modified[i])
+            print(f"[Color - {channel_names[i]}] PSNR: {psnr_val:.2f} dB")
+
+# --- --- --- --- --- --- #
 
 class StegoDTC:
-    def __init__(self, img_path="image.png", message="hola"):
+    def __init__(self, img_path="image.png", message="WaterMarking"):
         self.image_path = img_path
-        self.message = "Alejandro Salinas Victorino, Esta es mi Marca de Agua"
+        self.message = message
         # Coordinates of DCT coefficients to be modified
         self.u1, self.v1 = 2, 3
         self.u2, self.v2 = 3, 3
@@ -26,18 +76,22 @@ class StegoDTC:
         self.max_mark_size = None
         self.stego_img = None
 
-    def open_show_image_grayscale(self, save=False):
+
+    def open_show_image_grayscale(self, image_path=None, save=False):
         """
         Loads the image and converts it to grayscale.
         Optionally, it saves the grayscale version.
         """
-        image_opened = cv2.imread(self.image_path)
+        if image_path is None:
+            image_path = self.image_path
+
+        image_opened = cv2.imread(image_path)
         image_opened_gray = cv2.cvtColor(image_opened, cv2.COLOR_BGR2GRAY)
-        cv2.imshow(self.image_path, image_opened_gray)
+        cv2.imshow(image_path, image_opened_gray)
 
         if save:
-            cv2.imshow("grayscale_" + self.image_path, image_opened_gray)
-            cv2.imwrite("grayscale_" + self.image_path, image_opened_gray)
+            cv2.imshow("grayscale_" + image_path, image_opened_gray)
+            cv2.imwrite("grayscale_" + image_path, image_opened_gray)
 
         return image_opened_gray
 
@@ -120,7 +174,7 @@ class StegoDTC:
         for (i, j), block in embedded_blocks:
             self.stego_img[i:i + self.block_size, j:j + self.block_size] = block
 
-        cv2.imshow("stego_" + self.image_path, self.stego_img)
+        cv2.imshow("stego_dtc_" + self.image_path, self.stego_img)
         cv2.imwrite("stego_dtc_" + self.image_path, self.stego_img)
 
     def extract_bit(self, block):
@@ -130,18 +184,20 @@ class StegoDTC:
         B = dct2(block.astype(float))
         return 1 if B[self.u1, self.v1] > B[self.u2, self.v2] else 0
 
-    def recover_text_watermarking(self):
+    def recover_text_watermarking(self, message_len, path_name:str):
         """
         Recovers the embedded text message from the stego image.
         """
+        stego_img = self.open_show_image_grayscale(path_name)
+        h, w = stego_img.shape
         extracted_bits = []
-        message_len = len(self.message) * 8  # total bits expected
+        message_len = message_len * 8 # total bits expected
         index = 0
-        for i in range(0, self.h, self.block_size):
-            for j in range(0, self.w, self.block_size):
+        for i in range(0, h, self.block_size):
+            for j in range(0, w, self.block_size):
                 if index > message_len - 1:
                     break
-                block = self.stego_img[i:i + self.block_size, j:j + self.block_size]
+                block = stego_img[i:i + self.block_size, j:j + self.block_size]
                 bit = self.extract_bit(block)
                 extracted_bits.append(bit)
                 index += 1
@@ -164,8 +220,11 @@ class StegoDTC:
 
 
 # --- Execution ---
-watermarking_dtc = StegoDTC("image.png")     # Initialize with image file
+watermarking = "Alejandro Salinas Victorino, Esta es mi Marca de Agua"
+image_name = "image.png"
+watermarking_dtc = StegoDTC(img_path=image_name, message=watermarking)     # Initialize with image file
 watermarking_dtc.load_image()                # Load and preprocess image
 watermarking_dtc.embedded_text_message()     # Embed watermark into image
-watermarking_dtc.recover_text_watermarking() # Recover watermark
+watermarking_dtc.recover_text_watermarking(message_len=len(watermarking), path_name="stego_dtc_"+image_name) # Recover watermark
+psnr_measurement(original_path=image_name, modified_path="stego_dtc_"+image_name)
 watermarking_dtc.finish_opencv_session()     # Close windows

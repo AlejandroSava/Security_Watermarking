@@ -1,3 +1,10 @@
+"""
+This code add the watermarking in a grayscale and RGB image
+using the DCT concept.
+
+By: Alejandro Salinas V.
+"""
+
 import cv2
 import numpy as np
 from scipy.fftpack import dct, idct

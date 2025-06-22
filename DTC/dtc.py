@@ -239,8 +239,7 @@ class StegoDTC:
         # Group bits into 8-bit chunks and convert to characters
         chunks = [extracted_bits[i:i + 8] for i in range(0, len(extracted_bits), 8)]
         marking_recovered = ''.join([chr(int(''.join(map(str, byte)), 2)) for byte in chunks])
-        print(f"Recovered watermarking:")
-        print(marking_recovered)
+        print(f"Recovered watermarking in grayscale:", marking_recovered)
         return marking_recovered
 
     def embedded_text_message_rgb(self):
@@ -343,7 +342,7 @@ def main_gray_scale():
     watermarking_dtc.finish_opencv_session()
 
 def main_rgb_scale():
-    watermarking_rgb_1 = "Alejandro Salinas Victorino, Esta es mi Marca de Agua, saludos"
+    watermarking_rgb_1 = "Alejandro Salinas Victorino, Esta es mi Marca de Agua, saludos!"
     watermarking_rgb_2 = "Esta es mi Segunda Marca de agua que he incrustado"
     watermarking_rgb_3 = "Incrustando una Tercera Marca de agua para que sea recuperada"
     image_name_rgb = "image.png"
@@ -354,7 +353,7 @@ def main_rgb_scale():
                                                        message_2_len=len(watermarking_rgb_2),
                                                        message_3_len=len(watermarking_rgb_3),
                                                        path_name="stego_rgb_dtc_" + image_name_rgb)
-    psnr_measurement(original_path=image_name_rgb, modified_path="stego_rgb_dtc_" + image_name_rgb)
+    psnr_measurement(original_path=image_name_rgb, modified_path="stego_rgb_dtc_" + image_name_rgb, grayscale=False)
     watermarking_rgb_dtc.finish_opencv_session()
 
 if __name__ == "__main__":

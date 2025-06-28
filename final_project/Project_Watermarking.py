@@ -40,7 +40,7 @@ def main_process():
 
     print(" ----- Extracting the watermarking from stego and shamir secret sharing ----- ")
     stego.extract_rgb_image_watermark(wm_shape=(wm_h, wm_w),
-                                                     stego_path=shamir_decoded)
+                                                     stego_path="recover.jpeg")
 
     stego.finish_opencv_session()
 

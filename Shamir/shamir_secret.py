@@ -1,6 +1,10 @@
+"""
+The shamir code was taken from:
+https://github.com/handsomelky/Shamir-Image-Secret-Sharing/tree/main
+"""
+
 import time
 import numpy as np
-import argparse
 import png
 import sys
 import os

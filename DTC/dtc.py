@@ -326,6 +326,109 @@ class StegoDTC:
             print(f"Recovered watermark from {name} channel: {recovered_message}")
         return extracted_messages
 
+    def embed_rgb_image_watermark(self, watermark_path):
+        """
+        Incrusta una imagen RGB como marca de agua en la imagen base RGB (self.img),
+        utilizando bloques 8x8 y comparaciones de coeficientes DCT.
+        """
+        # Cargar imagen de marca de agua y redimensionarla
+        watermark = cv2.imread(watermark_path)
+        if watermark is None:
+            raise ValueError("No se pudo cargar la imagen de marca de agua.")
+
+        wm_h_blocks = int(self.max_mark_size ** 0.5) #self.h // self.block_size
+        print(f"the wm_h_blocks {wm_h_blocks}")
+        wm_w_blocks = int(self.max_mark_size ** 0.5)  #self.w // self.block_size
+        print(f"the wm_w_blocks {wm_w_blocks}")
+        watermark = cv2.resize(watermark, (wm_w_blocks, wm_h_blocks))  # Redimensionar a bloques disponibles
+        cv2.imwrite("scaling_" + watermark_path, watermark) # scaling
+        wm_b, wm_g, wm_r = cv2.split(watermark)
+        wm_channels = [wm_b, wm_g, wm_r]
+
+        cover_channels = cv2.split(self.img)
+        stego_channels = []
+
+        for channel_cover, channel_wm in zip(cover_channels, wm_channels):
+            embedded_blocks = []
+            index = 0
+            wm_flat_bits = []
+
+            # Convertir la imagen de marca en una lista de bits
+            for pixel in channel_wm.flatten():
+                for i in range(7, -1, -1):
+                    wm_flat_bits.append((pixel >> i) & 1)
+            #print("wm_flat_bits", wm_flat_bits)
+            print("wm_flat_bits len:", len(wm_flat_bits))
+            for i in range(0, self.h, self.block_size):
+                for j in range(0, self.w, self.block_size):
+                    if index < len(wm_flat_bits):
+                        block = channel_cover[i:i + self.block_size, j:j + self.block_size]
+                        bit = wm_flat_bits[index]
+                        embedded = self.embedded_bit(block, bit)
+                        embedded_blocks.append(((i, j), embedded))
+                        index += 1
+                    else:
+                        block = channel_cover[i:i + self.block_size, j:j + self.block_size]
+                        embedded_blocks.append(((i, j), block))
+
+            stego_channel = np.zeros_like(channel_cover)
+            for (i, j), block in embedded_blocks:
+                stego_channel[i:i + self.block_size, j:j + self.block_size] = block
+
+            stego_channels.append(stego_channel)
+
+        self.stego_img = cv2.merge(stego_channels)
+        cv2.imshow("stego_rgb_image_dtc_" + self.image_path, self.stego_img)
+        cv2.imwrite("stego_rgb_image_dtc_" + self.image_path, self.stego_img)
+        return wm_h_blocks, wm_w_blocks
+
+    def extract_rgb_image_watermark(self, wm_shape, stego_path):
+        """
+        Extrae una imagen RGB incrustada como marca de agua desde una imagen esteganográfica.
+        `wm_shape` debe ser una tupla con las dimensiones de la imagen de marca (alto, ancho).
+        """
+        stego_img = cv2.imread(stego_path)
+        if stego_img is None:
+            raise ValueError("No se pudo cargar la imagen esteganográfica.")
+
+        h, w, _ = stego_img.shape
+        channels = cv2.split(stego_img)
+        recovered_channels = []
+
+        wm_h, wm_w = wm_shape
+        total_bits = wm_h * wm_w * 8  # Por canal
+
+        for channel in channels:
+            extracted_bits = []
+            index = 0
+            for i in range(0, h, self.block_size):
+                for j in range(0, w, self.block_size):
+                    if index >= total_bits:
+                        break
+                    block = channel[i:i + self.block_size, j:j + self.block_size]
+                    bit = self.extract_bit(block)
+                    extracted_bits.append(bit)
+                    index += 1
+                if index >= total_bits:
+                    break
+
+            # Agrupar bits en bytes
+            pixels = []
+            for i in range(0, len(extracted_bits), 8):
+                byte = extracted_bits[i:i + 8]
+                if len(byte) < 8:
+                    break
+                value = int(''.join(str(b) for b in byte), 2)
+                pixels.append(value)
+
+            recovered_channel = np.array(pixels, dtype=np.uint8).reshape((wm_h, wm_w))
+            recovered_channels.append(recovered_channel)
+
+        watermark_recovered = cv2.merge(recovered_channels)
+        cv2.imshow("Recovered RGB Watermark", watermark_recovered)
+        cv2.imwrite("recovered_rgb_watermark.png", watermark_recovered)
+        return watermark_recovered
+
     @staticmethod
     def finish_opencv_session():
         """
@@ -363,6 +466,20 @@ def main_rgb_scale():
     psnr_measurement(original_path=image_name_rgb, modified_path="stego_rgb_dtc_" + image_name_rgb, grayscale=False)
     watermarking_rgb_dtc.finish_opencv_session()
 
+
+def main_watermarking_rgb():
+    image_name_rgb = "image.png"
+    watermarking = "alex_watermarking.png"
+    watermarking_rgb_dtc = StegoDTC(img_path=image_name_rgb)
+    watermarking_rgb_dtc.load_image_rgb()
+    wm_h, wm_w = watermarking_rgb_dtc.embed_rgb_image_watermark(watermarking)
+    # "stego_rgb_image_dtc_" + self.image_path,
+    watermarking_rgb_dtc.extract_rgb_image_watermark(wm_shape=(wm_h,wm_w),stego_path="stego_rgb_image_dtc_" +image_name_rgb )
+
+    watermarking_rgb_dtc.finish_opencv_session()
+
+
 if __name__ == "__main__":
-    main_gray_scale()
-    main_rgb_scale()
+    #main_gray_scale()
+    #main_rgb_scale()
+    main_watermarking_rgb()

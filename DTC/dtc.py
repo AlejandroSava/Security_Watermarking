@@ -69,7 +69,7 @@ def psnr_measurement(original_path, modified_path, grayscale=True):
 
 # --- --- --- --- --- --- #
 
-class StegoDTC:
+class StegoDCT:
     def __init__(self, img_path="image.png", message="WaterMarking", message2=None, message3=None):
         self.image_path = img_path
         self.message = message
@@ -326,7 +326,7 @@ class StegoDTC:
             print(f"Recovered watermark from {name} channel: {recovered_message}")
         return extracted_messages
 
-    def embed_rgb_image_watermark(self, watermark_path):
+    def embed_rgb_image_watermark(self, watermark_path, output_image_path=None):
         """
         Incrusta una imagen RGB como marca de agua en la imagen base RGB (self.img),
         utilizando bloques 8x8 y comparaciones de coeficientes DCT.
@@ -337,10 +337,11 @@ class StegoDTC:
             raise ValueError("No se pudo cargar la imagen de marca de agua.")
 
         wm_h_blocks = int(self.max_mark_size ** 0.5) #self.h // self.block_size
-        print(f"the wm_h_blocks {wm_h_blocks}")
+        #print(f"the wm_h_blocks {wm_h_blocks}")
         wm_w_blocks = int(self.max_mark_size ** 0.5)  #self.w // self.block_size
-        print(f"the wm_w_blocks {wm_w_blocks}")
+        #print(f"the wm_w_blocks {wm_w_blocks}")
         watermark = cv2.resize(watermark, (wm_w_blocks, wm_h_blocks))  # Redimensionar a bloques disponibles
+        cv2.imshow("scaling_" + watermark_path, watermark)
         cv2.imwrite("scaling_" + watermark_path, watermark) # scaling
         wm_b, wm_g, wm_r = cv2.split(watermark)
         wm_channels = [wm_b, wm_g, wm_r]
@@ -358,7 +359,7 @@ class StegoDTC:
                 for i in range(7, -1, -1):
                     wm_flat_bits.append((pixel >> i) & 1)
             #print("wm_flat_bits", wm_flat_bits)
-            print("wm_flat_bits len:", len(wm_flat_bits))
+            #print("wm_flat_bits len:", len(wm_flat_bits))
             for i in range(0, self.h, self.block_size):
                 for j in range(0, self.w, self.block_size):
                     if index < len(wm_flat_bits):
@@ -378,8 +379,14 @@ class StegoDTC:
             stego_channels.append(stego_channel)
 
         self.stego_img = cv2.merge(stego_channels)
-        cv2.imshow("stego_rgb_image_dtc_" + self.image_path, self.stego_img)
-        cv2.imwrite("stego_rgb_image_dtc_" + self.image_path, self.stego_img)
+        if output_image_path is None:
+            cv2.imshow("stego_rgb_image_dtc_" + self.image_path, self.stego_img)
+            cv2.imwrite("stego_rgb_image_dtc_" + self.image_path, self.stego_img)
+
+        else:
+            cv2.imshow("DCT_" + self.image_path, self.stego_img)
+            cv2.imwrite(output_image_path, self.stego_img)
+
         return wm_h_blocks, wm_w_blocks
 
     def extract_rgb_image_watermark(self, wm_shape, stego_path):
@@ -443,7 +450,7 @@ class StegoDTC:
 def main_gray_scale():
     watermarking = "Alejandro Salinas Victorino, Esta es mi Marca de Agua. Saludos!"
     image_name = "image.png"
-    watermarking_dtc = StegoDTC(img_path=image_name, message=watermarking)  # Initialize with image file
+    watermarking_dtc = StegoDCT(img_path=image_name, message=watermarking)  # Initialize with image file
     watermarking_dtc.load_gray_image()  # Load and preprocess image
     watermarking_dtc.embedded_text_message()  # Embed watermark into image
     watermarking_dtc.recover_text_watermarking(message_len=len(watermarking),
@@ -456,7 +463,7 @@ def main_rgb_scale():
     watermarking_rgb_2 = "Esta es mi Segunda Marca de agua que he incrustado"
     watermarking_rgb_3 = "Incrustando una Tercera Marca de agua para que sea recuperada"
     image_name_rgb = "image.png"
-    watermarking_rgb_dtc = StegoDTC(img_path=image_name_rgb, message=watermarking_rgb_1, message2=watermarking_rgb_2, message3=watermarking_rgb_3)
+    watermarking_rgb_dtc = StegoDCT(img_path=image_name_rgb, message=watermarking_rgb_1, message2=watermarking_rgb_2, message3=watermarking_rgb_3)
     watermarking_rgb_dtc.load_image_rgb()
     watermarking_rgb_dtc.embedded_text_message_rgb()
     watermarking_rgb_dtc.recover_text_watermarking_rgb(message_1_len=len(watermarking_rgb_1),
@@ -470,7 +477,7 @@ def main_rgb_scale():
 def main_watermarking_rgb():
     image_name_rgb = "image.png"
     watermarking = "alex_watermarking.png"
-    watermarking_rgb_dtc = StegoDTC(img_path=image_name_rgb)
+    watermarking_rgb_dtc = StegoDCT(img_path=image_name_rgb)
     watermarking_rgb_dtc.load_image_rgb()
     wm_h, wm_w = watermarking_rgb_dtc.embed_rgb_image_watermark(watermarking)
     # "stego_rgb_image_dtc_" + self.image_path,

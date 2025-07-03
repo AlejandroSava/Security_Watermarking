@@ -16,6 +16,7 @@ class PerceptualHash:
         self.path_img_2 = path_img_2
         self.per_hash_1 = None
         self.per_hash_2 = None
+        self.hamming_distance_value = None
 
     def calculate_perceptual_hashes(self):
         # load the images
@@ -37,9 +38,35 @@ class PerceptualHash:
         hash1, hash2 = self.calculate_perceptual_hashes()
         print("Hash perceptual 1:", hash1)
         print("Hash perceptual 2:", hash2)
+        self.hamming_distance_value = abs(hash1 - hash2)
         print("Hamming Distance:", abs(hash1 - hash2))
+        return self.hamming_distance_value
 
     def similarity(self):
         diff = abs(self.per_hash_1  - self.per_hash_2)
         similarity = 1 - (diff / 64)
         print(f"Similarity : {similarity:.2f}")
+
+    def valid_image(self):
+        print("The Hamming Distance is:", self.hamming_distance_value)
+        d = self.hamming_distance_value
+
+        if d == 0:
+            print("Hamming Distance: Valid. Images are identical")
+            return True
+        elif 0 < d <= 5:
+            print("Hamming Distance: Valid. Images are visually very similar")
+            return True
+        elif 6 <= d <= 15:
+            print("Hamming Distance: Caution. Images are similar but not identical")
+            return False  # En enfoque conservador, ya no es válida
+        elif 16 <= d <= 30:
+            print("Hamming Distance: Not valid. Noticeable differences in content")
+            return False
+        elif 31 <= d <= 45:
+            print("Hamming Distance: Not valid. Content is largely different")
+            return False
+        else:
+            print("Hamming Distance: Not valid. Images are completely different")
+            return False
+

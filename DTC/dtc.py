@@ -26,7 +26,7 @@ def calculate_psnr(original, modified):
     psnr = 10 * np.log10((max_pixel ** 2) / mse)
     return psnr
 
-# Enhanced PSNR measurement method
+#PSNR measurement method
 def psnr_measurement(original_path, modified_path, grayscale=True):
     if grayscale:
         # Load grayscale images
@@ -389,7 +389,7 @@ class StegoDCT:
 
         return wm_h_blocks, wm_w_blocks
 
-    def extract_rgb_image_watermark(self, wm_shape, stego_path):
+    def extract_rgb_image_watermark(self, wm_shape, stego_path, output_path=None):
         """
         Extrae una imagen RGB incrustada como marca de agua desde una imagen esteganográfica.
         `wm_shape` debe ser una tupla con las dimensiones de la imagen de marca (alto, ancho).
@@ -433,7 +433,9 @@ class StegoDCT:
 
         watermark_recovered = cv2.merge(recovered_channels)
         cv2.imshow("Recovered RGB Watermark", watermark_recovered)
-        cv2.imwrite("recovered_rgb_watermark.png", watermark_recovered)
+        if output_path is None:
+            output_path = "recovered_rgb_watermark.png"
+        cv2.imwrite(output_path, watermark_recovered)
         return watermark_recovered
 
     @staticmethod

@@ -14,12 +14,14 @@ from Crypto.Util.number import *
 
 class ShamirSecretSharing:
     def __init__(self, image_path):
+        """Initialize the class with the input image path."""
         self.image_path = image_path
         self.image_shape = None
         self.n_shares = None
         self.k_shares = None
 
     def preprocessing(self, path=None):
+        """Loads the image and flattens it into a 1D array for pixel-level processing."""
         if path is None:
             path = self.image_path
         img = Image.open(path)
@@ -28,13 +30,14 @@ class ShamirSecretSharing:
         return data.flatten(), data.shape
 
     def polynomial(self, img, n, k):
+        """Generates n secret shares from the image using (k-1)-degree random polynomials."""
         num_pixels = img.shape[0]
         # 生成多项式系数
         coefficients = np.random.randint(low=0, high=257, size=(num_pixels, k - 1))
         secret_imgs = []
         imgs_extra = []
         for i in range(1, n + 1):
-            # 构造(r-1)次多项式
+
             base = np.array([i ** j for j in range(1, k)])
             base = np.matmul(coefficients, base)
 
@@ -49,7 +52,7 @@ class ShamirSecretSharing:
         return np.array(secret_imgs), imgs_extra
 
     def insert_text_chunk(self, src_png, dst_png, text):
-        '''在png中的第二个chunk插入自定义内容'''
+        """Inserts a text chunk into the PNG file to store extra metadata."""
         reader = png.Reader(filename=src_png)
         chunks = reader.chunks()  # 创建一个每次返回一个chunk的生成器
         chunk_list = list(chunks)
@@ -62,7 +65,7 @@ class ShamirSecretSharing:
             png.write_chunks(dst_file, chunk_list)
 
     def get_file_size(self, file_path):
-        """ 获取文件大小并格式化输出 """
+        """Returns a formatted string of the file size."""
         try:
             size = os.path.getsize(file_path)
             return self.format_size(size)
@@ -70,7 +73,7 @@ class ShamirSecretSharing:
             return f"Error: {e}"
 
     def read_text_chunk(self, src_png, index=1):
-        '''读取png的第index个chunk'''
+        """Reads and returns the embedded text chunk (metadata) from a PNG file."""
         reader = png.Reader(filename=src_png)
         chunks = reader.chunks()
         chunk_list = list(chunks)
@@ -79,6 +82,7 @@ class ShamirSecretSharing:
         return img_extra
 
     def lagrange(self, x, y, num_points, x_test):
+        """Performs Lagrange interpolation at a specific point x_test over GF(257)."""
         l = np.zeros(shape=(num_points,))
         for k in range(num_points):
 
@@ -98,6 +102,7 @@ class ShamirSecretSharing:
         return L
 
     def decode(self,imgs, imgs_extra, index, r):
+        """Reconstructs the original image using r provided shares and their metadata."""
         assert imgs.shape[0] >= r
         x = np.array(index)
         dim = imgs.shape[1]
@@ -132,7 +137,7 @@ class ShamirSecretSharing:
         return np.array(img)
 
     def format_size(self, size_bytes):
-        """ 根据字节大小自动调整单位 """
+        """Reconstructs the original image using r provided shares and their metadata."""
         if size_bytes == 0:
             return "0B"
         size_names = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
@@ -142,6 +147,7 @@ class ShamirSecretSharing:
         return f"{s} {size_names[i]}"
 
     def compare_images(self, image1_path, image2_path):
+        """Compares two images and prints their pixel-wise difference statistics."""
         print("\n=== Starting image comparison ===")
         image1 = np.array(Image.open(image1_path))
         image2 = np.array(Image.open(image2_path))
@@ -156,6 +162,7 @@ class ShamirSecretSharing:
     ####################### main methods
 
     def encoding(self, n_shares = None, k_shares=None ):
+        """Main method to encode the image into n secret shares using Shamir's scheme."""
         start_time = time.time()
         print("\n=== Starting image encoding process ===")
         if n_shares is None:
@@ -189,6 +196,7 @@ class ShamirSecretSharing:
         print("=== Image encoding completed. Time elapsed: {:.2f} seconds ===".format(end_time - start_time))
 
     def decoding(self, decode_img:str, index:list, k_decode = None):
+        """Main method to reconstruct the original image from k secret shares."""
         start_time = time.time()
         print("\n=== Starting image decoding process ===")
 

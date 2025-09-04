@@ -42,7 +42,7 @@ def main_process():
 
     # Second Part
     print("\n ----- Recover the Shamir Secret ----- ")
-    shamir.decoding(decode_img=shamir_decoded, index=[1, 6, 2])
+    shamir.decoding(decode_img=shamir_decoded, index=[1, 2, 6])
 
     print(" ----- Extracting the watermarking from stego and shamir secret sharing ----- ")
     stego.extract_rgb_image_watermark(wm_shape=(wm_h, wm_w),stego_path=shamir_decoded, output_path=watermarking_recovered)
@@ -59,12 +59,38 @@ def main_process():
     print(f"\n ***** PSNR between {image_cover_name_rgb} and {stego_name}*****")
     psnr_measurement(image_cover_name_rgb, stego_name, grayscale=False)
 
+
     print(f" ***** PSNR between {"scaling_"+watermarking_image} and {watermarking_recovered}*****")
     psnr_measurement("scaling_"+watermarking_image, watermarking_recovered, grayscale=False)
 
     ### getting the difference pixel per pixel
     print(f" ***** Getting the difference pixel per pixel from: {watermarking_image} and {watermarking_recovered}*****")
     shamir.compare_images(image1_path="scaling_"+watermarking_image, image2_path=watermarking_recovered)
+
+
+    ## adding watermarking attacks
+    compression = 100
+    jpeg_30 = stego.jpeg_compression(stego_name, compression)
+    jpeg_30_wm_recovered = f"jpeg_{compression}_wm_recovered_compression.jpeg"
+    print(" ----- Extracting the watermarking from jpeg compression ----- ")
+    stego.extract_rgb_image_watermark(wm_shape=(wm_h, wm_w), stego_path=jpeg_30,
+                                      output_path=jpeg_30_wm_recovered)
+    print(f"\n ***** PSNR between {watermarking_image} and {jpeg_30_wm_recovered} *****")
+    psnr_measurement("scaling_"+watermarking_image, jpeg_30_wm_recovered, grayscale=False)
+
+    # salt and pepper
+    salt = 0.01
+    pepper = 0.01
+    noisy_image = stego.add_salt_pepper_noise(stego_name,salt, pepper)
+    noisy_image_wm_recovered = "wm_recovered_" + noisy_image
+    print(" ----- Extracting the watermarking from salt and pepper noise ----- ")
+    stego.extract_rgb_image_watermark(wm_shape=(wm_h, wm_w), stego_path=noisy_image,
+                                      output_path=noisy_image_wm_recovered)
+    print(f"\n ***** PSNR between {watermarking_image} and {noisy_image_wm_recovered} *****")
+    psnr_measurement("scaling_" + watermarking_image, noisy_image_wm_recovered, grayscale=False)
+
+
+    #finishing the session
     stego.finish_opencv_session()
 
 if __name__ == '__main__':

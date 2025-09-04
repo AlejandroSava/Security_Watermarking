@@ -1,0 +1,73 @@
+/home/alejandro/Documents/Security_Watermarking/.venv/bin/python /home/alejandro/Documents/Security_Watermarking/final_project/Project_Watermarking.py
+ ***** Main Process *****
+ ***** Generating Stego *****
+Original shape: (368, 400, 3)
+Maximum embeddable bytes: 287
+Message size: 12
+ ***** Stego Generated *****
+ ----- Shamir Shared Secret -----
+
+ ----- Generating Secrets -----
+There are n = 6 shares and k = 3 shares
+
+=== Starting image encoding process ===
+secret_1_stego_dct_image.png saved. 445.24 KB
+secret_2_stego_dct_image.png saved. 444.93 KB
+secret_3_stego_dct_image.png saved. 445.45 KB
+secret_4_stego_dct_image.png saved. 445.06 KB
+secret_5_stego_dct_image.png saved. 445.11 KB
+secret_6_stego_dct_image.png saved. 444.29 KB
+=== Image encoding completed. Time elapsed: 0.18 seconds ===
+
+ ----- Recover the Shamir Secret -----
+
+=== Starting image decoding process ===
+Threshold number 'k' is required for decoding, taking default in the class
+decoding:
+[██████████████████████████████████████████████████] 100.00%
+decoded_sss_stego_dct_image.png saved. 211.52 KB
+=== Image decoding completed. Time elapsed: 4.39 seconds ===
+ ----- Extracting the watermarking from stego and shamir secret sharing -----
+
+ ----- Perceptual Hash -----
+Calculating perceptual hashes... ... ...
+Hash perceptual 1: 8585c47a7bf13296
+Hash perceptual 2: 8585c47a6be13e96
+Hamming Distance: 4
+Similarity : 0.94
+The Hamming Distance is: 4
+Hamming Distance: Valid. Images are visually very similar
+
+ ***** PSNR between image.png and stego_dct_image.png*****
+[Color - Blue] PSNR: 41.47 dB
+[Color - Green] PSNR: 41.79 dB
+[Color - Red] PSNR: 41.48 dB
+ ***** PSNR between scaling_alex_watermarking.png and recover_alex_watermarking.png*****
+[Color - Blue] PSNR: 28.49 dB
+[Color - Green] PSNR: 28.88 dB
+[Color - Red] PSNR: 25.90 dB
+ ***** Getting the difference pixel per pixel from: alex_watermarking.png and recover_alex_watermarking.png*****
+
+=== Starting image comparison ===
+Mean difference: 1.5365
+Max difference: 132
+Min difference: 0
+Standard deviation of difference: 10.5881
+=== Image comparison completed.  ===
+Adding jpeg compression
+Compressing image Done!
+ ----- Extracting the watermarking from jpeg compression -----
+
+ ***** PSNR between alex_watermarking.png and jpeg_100_wm_recovered_compression.jpeg *****
+[Color - Blue] PSNR: 7.51 dB
+[Color - Green] PSNR: 20.61 dB
+[Color - Red] PSNR: 9.23 dB
+ ----- Extracting the watermarking from salt and pepper noise -----
+
+ ***** PSNR between alex_watermarking.png and wm_recovered_rgb_with_salt_0.01_and_pepper_0.01.png *****
+[Color - Blue] PSNR: 12.36 dB
+[Color - Green] PSNR: 11.94 dB
+[Color - Red] PSNR: 11.87 dB
+Finish all the OpenCV sessions
+
+Process finished with exit code 0

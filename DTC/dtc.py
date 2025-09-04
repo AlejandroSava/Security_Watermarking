@@ -8,6 +8,7 @@ By: Alejandro Salinas V.
 import cv2
 import numpy as np
 from scipy.fftpack import dct, idct
+import random
 
 # --- Helper Functions ---
 # Apply 2D Discrete Cosine Transform (DCT)
@@ -76,7 +77,7 @@ class StegoDCT:
         self.message2 = message2 # for RGB
         self.message3 = message3 # for RBG
         # Coordinates of DCT coefficients to be modified
-        self.u1, self.v1 = 2, 1
+        self.u1, self.v1 = 2, 3
         self.u2, self.v2 = 3, 3
         self.x = 10.0  # Minimum difference between coefficients for robustness
         self.block_size = 8  # Image is processed in 8x8 blocks
@@ -437,6 +438,43 @@ class StegoDCT:
             output_path = "recovered_rgb_watermark.png"
         cv2.imwrite(output_path, watermark_recovered)
         return watermark_recovered
+
+    def jpeg_compression(self, image_path, jpeg_compression_value=50):
+        image = cv2.imread(image_path)
+        output_path = "jpeg_" + str(jpeg_compression_value) + ".jpeg"
+        print("Adding jpeg compression")
+        cv2.imwrite(output_path, image, [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_compression_value])
+        print("Compressing image Done!")
+        return output_path
+
+    def add_salt_pepper_noise(self,image_path, salt_prob, pepper_prob):
+        # Load a color image
+        image = cv2.imread(image_path)  # Should be in color by default
+        output_path = f'rgb_with_salt_{salt_prob}_and_pepper_{pepper_prob}.png'
+        noisy = image.copy()
+        h, w = image.shape[:2]
+
+        # Salt noise
+        num_salt = int(h * w * salt_prob)
+        for _ in range(num_salt):
+            i = random.randint(0, h - 1)
+            j = random.randint(0, w - 1)
+            noisy[i, j] = [255, 255, 255]  # White pixel (salt)
+
+        # Pepper noise
+        num_pepper = int(h * w * pepper_prob)
+        for _ in range(num_pepper):
+            i = random.randint(0, h - 1)
+            j = random.randint(0, w - 1)
+            noisy[i, j] = [0, 0, 0]  # Black pixel (pepper)
+
+        cv2.imwrite(output_path, noisy)
+
+        return output_path
+
+
+
+
 
     @staticmethod
     def finish_opencv_session():

@@ -59,7 +59,7 @@ class PerceptualHash:
             return True
         elif 6 <= d <= 15:
             print("Hamming Distance: Caution. Images are similar but not identical")
-            return False  # En enfoque conservador, ya no es válida
+            return False
         elif 16 <= d <= 30:
             print("Hamming Distance: Not valid. Noticeable differences in content")
             return False
